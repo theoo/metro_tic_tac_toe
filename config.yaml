@@ -1,0 +1,8 @@
+---
+:grid: 8
+:players:
+  :einstein: 'X'
+  :schroedinger: 'O'
+  :hal: '#'
+:computer_name: 'hal'
+:ai: 'Random'
