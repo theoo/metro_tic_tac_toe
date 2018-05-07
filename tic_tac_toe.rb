@@ -12,7 +12,7 @@ class TicTacToe
     validate_config
 
     @ai = Ai.init(@config[:ai])
-    @players = @config[:players].map{|p| PlayerStruct.new(*p)}
+    @players = @config[:players].map{|p| PlayerStruct.new(*p)}.shuffle
 
     # x * y
     @grid = [nil] * @config[:grid] * @config[:grid]
@@ -54,11 +54,12 @@ class TicTacToe
 
       player = @players[turn]
 
-      xy = if player.name.to_s == @config[:computer_name].to_s
+      if player.name.to_s == @config[:computer_name].to_s
         # pass the context, some AI might require access to almost everything (including player's bank account)
-        @ai.get_coordinates { binding }
+        xy = @ai.get_coordinates { binding }
+        puts "\t #{@config[:computer_name]} (the computer) played."
       else
-        request_coordinates(player)
+        xy = request_coordinates(player)
       end
 
       # set symbol to corresponding grid index
