@@ -2,8 +2,6 @@
 
 Simple [TicTacToe](https://en.wikipedia.org/wiki/Tic-tac-toe) game, developed with minimal dependencies.
 
-![https://imgur.com/gallery/GTk0h37](https://imgur.com/gallery/GTk0h37)
-
 ## specs
 
 see `doc/challenge.pdf`
