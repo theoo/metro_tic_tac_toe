@@ -7,6 +7,13 @@ class TicTacToe
 
   PlayerStruct = Struct.new(:name, :symbol)
 
+  attr_reader :config
+  attr_reader :grid
+  attr_reader :players
+  attr_reader :winner
+  attr_reader :round
+  attr_accessor :moves
+
   def initialize(config)
     @config = config
     validate_config
@@ -18,7 +25,11 @@ class TicTacToe
     @grid = [nil] * @config[:grid] * @config[:grid]
 
     @winner = nil
-    @rounds = 0
+
+    @round = 0
+
+    # preset moves
+    @moves = []
   end
 
   #
@@ -54,7 +65,7 @@ class TicTacToe
 
       player = @players[turn]
 
-      if player.name.to_s == @config[:computer_name].to_s
+      if player.name.to_s == @config[:computer_name].to_s and !simulation?
         # pass the context, some AI might require access to almost everything (including player's bank account)
         xy = @ai.get_coordinates { binding }
         puts "\t #{@config[:computer_name]} (the computer) played."
@@ -67,24 +78,39 @@ class TicTacToe
 
       draw
 
-      @winner = check_winner
-
-      @rounds += 1
-      turn = (turn < @players.count - 1 ? turn + 1 : 0)
-
+      @winner ||= check_winner
       # check for draw
-      @winner = "Nobody" unless @grid.include? nil
+      @winner ||= "Nobody" unless @grid.include? nil
+
+      # Send part of the context if a block is given, for AI and testing
+      yield(xy) if block_given?
+
+      @round += 1
+      turn = @round % @players.count
 
     end
 
     if @winner.is_a? PlayerStruct
       print "#{@winner.name} won!"
       puts " Congratulations!" unless @winner == @config[:computer_name]
-    else
+    elsif @winner == 'Nobody'
       puts " OMG, it's a draw!"
+    elsif @winner == 'Simulation'
+      puts " Don't worry, it's just a simulation."
     end
     puts ""
 
+  end
+
+  #
+  # Converter from Cartesian plane to array index
+  #
+  # @param [Array<Integer>] xy Cartesian values
+  #
+  # @return [Integer] grid index value
+  #
+  def grid_index_from_coordinate(xy)
+    xy[0] + xy[1] * @config[:grid]
   end
 
   private
@@ -141,10 +167,18 @@ class TicTacToe
     # @return [Array<Integer>] coordinate to the for x,y
     #
     def request_coordinates(player)
-      ask "#{player.name} (#{player.symbol}), it's your turn. Please write coordinates to the form 'x,y': "
-      answer = nil
-      while answer.nil?
-        answer = validate_coordinates(gets)
+      if simulation?
+        puts "\tPlaying the preset coordinates #{@moves[0]}."
+        answer = validate_coordinates(@moves.shift.join(","))
+
+        # End the game if all preset moves have been played
+        @winner = "Simulation" if @moves.empty?
+      else
+        ask "#{player.name} (#{player.symbol}), it's your turn. Please write coordinates to the form 'x,y': "
+        answer = nil
+        while answer.nil?
+          answer = validate_coordinates(gets)
+        end
       end
 
       answer
@@ -243,17 +277,6 @@ class TicTacToe
     end
 
     #
-    # Converter from Cartesian plane to array index
-    #
-    # @param [Array<Integer>] xy Cartesian values
-    #
-    # @return [Integer] grid index value
-    #
-    def grid_index_from_coordinate(xy)
-      xy[0] + xy[1] * @config[:grid]
-    end
-
-    #
     # Find player object based on her/his symbol
     #
     # @param [String] symbol a char
@@ -324,6 +347,16 @@ class TicTacToe
     #
     def ask(txt)
       print "\t#{txt}"
+    end
+
+    #
+    # Is it a real game or a simulation?
+    #
+    #
+    # @return [Boolean] true if it's a simulation
+    #
+    def simulation?
+      @moves.size > 0
     end
 
 end
