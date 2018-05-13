@@ -30,6 +30,13 @@ The folder `ai` contains pluggable AI that can be selected through `config.yml` 
 
 Important programing choices and decisions are described in the code itself.
 
+## Testing
+
+Gherkin (Cucumber) requires some dependencies that can be installed with `gem install bundle; bundle`.
+To run the test, use the command `cucumber`.
+
+Currently only challenge-specific specs have been described and tested using **rspec**.
+
 ## TODO
 
 - develop a better AI based on [MiniMax](https://en.wikipedia.org/wiki/Minimax) or [GameTree](https://en.wikipedia.org/wiki/Game_tree) decision.
