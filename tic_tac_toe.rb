@@ -7,14 +7,22 @@ class TicTacToe
 
   PlayerStruct = Struct.new(:name, :symbol)
 
-  attr_reader :config
-  attr_reader :grid
+  # For testing and AI
   attr_reader :players
-  attr_reader :winner
-  attr_reader :round
+  attr_accessor :config
+  attr_accessor :winner
+  attr_accessor :round
+  attr_accessor :grid
   attr_accessor :moves
 
-  def initialize(config)
+  #
+  # Game constructor
+  #
+  # @param [Hash] config configuration
+  # @param [Array] grid for a preset game
+  # @param [Integer] round for a preset game
+  #
+  def initialize(config, grid = nil, round = 0)
     @config = config
     validate_config
 
@@ -22,11 +30,15 @@ class TicTacToe
     @players = @config[:players].map{|p| PlayerStruct.new(*p)}.shuffle
 
     # x * y
-    @grid = [nil] * @config[:grid] * @config[:grid]
+    if grid
+      @grid = grid
+    else
+      @grid = [nil] * @config[:grid] * @config[:grid]
+    end
 
     @winner = nil
 
-    @round = 0
+    @round = round
 
     # preset moves
     @moves = []
@@ -55,38 +67,35 @@ class TicTacToe
 
     EOT
 
-    puts title
+    puts colorize(36) { title }
 
     draw
 
-    turn = 0
-
     while @winner.nil?
 
-      player = @players[turn]
-
-      if player.name.to_s == @config[:computer_name].to_s and !simulation?
-        # pass the context, some AI might require access to almost everything (including player's bank account)
+      if current_player.name.to_s == @config[:computer_name].to_s and !simulation?
+        # pass the context, some AI might require access to almost everything (including current_player's bank account)
+        puts "\t #{@config[:computer_name]} (the computer) is thinking..."
         xy = @ai.get_coordinates { binding }
-        puts "\t #{@config[:computer_name]} (the computer) played."
+        cartesian_coordinates = xy[0] + 1, @config[:grid] - xy[1]
+        puts "\t #{@config[:computer_name]} played #{cartesian_coordinates.join(',')}."
       else
-        xy = request_coordinates(player)
+        xy = request_coordinates(current_player)
       end
 
       # set symbol to corresponding grid index
-      @grid[grid_index_from_coordinate(xy)] = player.symbol
+      @grid[grid_index_from_coordinate(xy)] = current_player.symbol
 
       draw
 
       @winner ||= check_winner
       # check for draw
-      @winner ||= "Nobody" unless @grid.include? nil
+      @winner ||= "Nobody" if over?
 
       # Send part of the context if a block is given, for AI and testing
       yield(xy) if block_given?
 
       @round += 1
-      turn = @round % @players.count
 
     end
 
@@ -113,51 +122,107 @@ class TicTacToe
     xy[0] + xy[1] * @config[:grid]
   end
 
-  private
+  #
+  # Check rows, columns and the two diagonals for a wining symbol
+  #
+  #
+  # @return [PlayerStruct, NilClass] player object if there is a winner, otherwise nil
+  #
+  def check_winner
+    all_symbols = [@players.map(&:symbol), nil].flatten
 
-    #
-    # Draw the board, legend and rules
-    #
-    # @return [NilClass] nil
-    #
-    def draw
+    # check horizontals
+    matrix = @grid.each_slice(@config[:grid]).to_a
+    player = count_row_symbols matrix
 
+    # check verticals
+    player ||= count_row_symbols matrix.transpose
+
+    # check diagonals
+    # /
+    cursor = @config[:grid]
+    slash = matrix.map {|row| cursor -= 1; row[cursor]}
+    slash.uniq!
+    player ||= get_player_from_symbol(slash.first) if slash.size == 1 and !slash.first.nil?
+
+    # \
+    cursor = -1
+    anti_slash = matrix.map {|row| cursor += 1; row[cursor]}
+    anti_slash.uniq!
+    player ||= get_player_from_symbol(anti_slash.first) if anti_slash.size == 1 and !anti_slash.first.nil?
+
+    player
+  end
+
+  def over?
+    !@grid.include? nil
+  end
+
+  #
+  # Draw the board, legend and rules
+  #
+  #
+  # @param [Integer] color_code the color-code to draw the table
+  #
+  # @return [NilClass] nil
+  #
+  def draw(color_code = 37)
+
+    pix = colorize(color_code) do
       # top frame
-      puts  "\t y "
-      puts  "\t ↓ "
-      print "\t   "
-      puts "-" * (@config[:grid] * 2 + 1)
+      str = ""
+      str <<  "\t y \n"
+      str <<  "\t ↓ \n"
+      str << "\t   "
+      str << ("-" * (@config[:grid] * 2 + 1) + "\n")
       @grid.each_with_index do |symbol, idx|
 
         # left frame
         if idx % @config[:grid] == 0
           line_idx = @config[:grid] - idx / (@config[:grid]) # () = ruby syntax issue in sublime text...
-          print "\t#{line_idx.to_s.ljust(2, " ")} |"
+          str << "\t#{line_idx.to_s.ljust(2, " ")} |"
         end
 
-        print symbol.nil? ? " " : symbol
+        str << (symbol.nil? ? " " : symbol)
         if idx % @config[:grid] == @config[:grid] - 1
           # right frame
-          puts "|"
+          str << "|\n"
         else
           # frame
-          print "|"
+          str << "|"
         end
 
       end
 
       # bottom frame
-      print "\t   "
-      puts "-" * (@config[:grid] * 2 + 1)
+      str << "\t   "
+      str << ("-" * (@config[:grid] * 2 + 1) + "\n")
 
       # column index
-      print "\t    "
-      (@config[:grid]).times{|n| print "#{n + 1} "}
-      puts " ← x"
-      puts " "
-
-      nil
+      str << "\t    "
+      (@config[:grid]).times{|n| str << "#{n + 1} "}
+      str << " ← x\n"
+      str << " \n"
+      str
     end
+
+    puts pix
+
+    nil
+  end
+
+  #
+  # Current playing player
+  #
+  #
+  # @return [PlayerStruct] the current player
+  # 
+  def current_player
+    turn = @round % @players.count
+    @players[turn]
+  end
+
+  private
 
     #
     # Ask coordinate to the user
@@ -202,7 +267,9 @@ class TicTacToe
 
       if c and c.size == 2
 
-        # convert answer to the board world
+        # Convert Cartesian value to the imaginary bi-dimensional array
+        # This is called "imaginary" because this system is stored to uni-dimensional array (@grid), the representation
+        # is used only to validate the range.
         c = [
           c[0] - 1,
           @config[:grid] - c[1]
@@ -225,38 +292,6 @@ class TicTacToe
       else
         ask "Please provide two digits in the range from 1 to #{@config[:grid]} and separated by a coma.\nTry again: "
       end
-    end
-
-    #
-    # Check rows, columns and the two diagonals for a wining symbol
-    #
-    #
-    # @return [PlayerStruct, NilClass] player object if there is a winner, otherwise nil
-    #
-    def check_winner
-      all_symbols = [@players.map(&:symbol), nil].flatten
-
-      # check horizontals
-      matrix = @grid.each_slice(@config[:grid]).to_a
-      player = count_row_symbols matrix
-
-      # check verticals
-      player ||= count_row_symbols matrix.transpose
-
-      # check diagonals
-      # /
-      cursor = 5
-      slash = matrix.map {|row| cursor -= 1; row[cursor]}
-      slash.uniq!
-      player ||= get_player_from_symbol(slash.first) if slash.size == 1 and !slash.first.nil?
-
-      # \
-      cursor = -1
-      anti_slash = matrix.map {|row| cursor += 1; row[cursor]}
-      anti_slash.uniq!
-      player ||= get_player_from_symbol(anti_slash.first) if anti_slash.size == 1 and !anti_slash.first.nil?
-
-      player
     end
 
     #
@@ -357,6 +392,42 @@ class TicTacToe
     #
     def simulation?
       @moves.size > 0
+    end
+
+    #
+    # Colorize the String returned by the block
+    #
+    # @param [Integer] color_code the code of the color
+    #   Foreground
+    #   30 = black
+    #   31 = red
+    #   32 = green
+    #   33 = yellow
+    #   34 = blue
+    #   35 = magenta
+    #   36 = cyan
+    #   37 = gray
+    #
+    #   Backgrounds
+    #   40 = bg_black
+    #   41 = bg_red
+    #   42 = bg_green
+    #   43 = bg_brown
+    #   44 = bg_blue
+    #   45 = bg_magenta
+    #   46 = bg_cyan
+    #   47 = bg_gray
+    #
+    # @return [String] Colorized String
+    #
+    # @yieldreturn [String] The called block should return a String to be colorized
+    def colorize(color_code, &block)
+      str = yield
+      if str.is_a? String
+        "\e[#{color_code}m#{str}\e[0m"
+      else
+        raise ArgumentError, "Expect the block to return a String"
+      end
     end
 
 end

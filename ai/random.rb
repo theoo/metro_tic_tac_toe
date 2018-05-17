@@ -26,8 +26,8 @@ class Ai::Random < Ai::Base
       coordinates = nil
       while coordinates.nil?
         c = [
-          SecureRandom.random_number(1..@config[:grid]),
-          SecureRandom.random_number(1..@config[:grid])
+          SecureRandom.random_number(0..@config[:grid] - 1),
+          SecureRandom.random_number(0..@config[:grid] - 1)
         ]
         coordinates = @game_context.eval("validate_coordinates('#{c.join(",")}')")
       end
