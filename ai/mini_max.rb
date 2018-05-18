@@ -40,6 +40,16 @@ class Ai::MiniMax < Ai::Base
 
   private
 
+    #
+    # Explore the whole game tree scores in a recursion
+    #   both @best_more and @worst_move are required at an instance level.
+    #   This method won't work for large game tree (more than 3x3) and therefore is timed using the @time variable to
+    #   5 seconds, and the recursion stopped after this delay - returning only 0 scores which means no winner/looser.
+    #
+    # @param [TicTacToe] game instance
+    #
+    # @return [Integer] last score (not the best)
+    #
     def minimax(game)
 
       s = score(game)
