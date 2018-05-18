@@ -1,3 +1,5 @@
+# @author Théo Reichel
+
 require 'rubygems'
 require 'yaml'
 require './tic_tac_toe'

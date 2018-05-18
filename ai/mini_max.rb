@@ -1,3 +1,5 @@
+# @author Théo Reichel
+
 class Ai::MiniMax < Ai::Base
 
   def initialize

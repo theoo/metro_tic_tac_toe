@@ -1,3 +1,5 @@
+# @author Théo Reichel
+
 class Ai::Random < Ai::Base
 
   def initialize

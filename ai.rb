@@ -1,3 +1,5 @@
+# @author Théo Reichel
+
 module Ai
 
   Dir["./ai/*.rb"].each {|file| require file }

@@ -45,6 +45,11 @@ On a 10x10 playfield the number of games reaches a generous 1.60 x 10^60, or 1.6
 When the playfield increase so does the _game complexity_, and optimization is required. Methods like _genetic algorithms_ or _neural networks_ are more adapted to big playfield (with complex rules), like for the _Chess game_.
 I believe finding the correct solution is outside of this challenge scope.
 
+## Documentation
+
+The code documentation can be generated using [yard](https://yardoc.org/).
+To install it, type `gem install yard`, then you can generate it using `yardoc --private ./**/*.rb` and open _doc/index.html_.
+
 ## Testing
 
 Gherkin (Cucumber) requires some dependencies that can be installed with `gem install bundle; bundle`.

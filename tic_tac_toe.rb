@@ -1,3 +1,5 @@
+# @author Théo Reichel
+
 class TicTacToe
 
   require 'securerandom'
@@ -216,7 +218,7 @@ class TicTacToe
   #
   #
   # @return [PlayerStruct] the current player
-  # 
+  #
   def current_player
     turn = @round % @players.count
     @players[turn]
